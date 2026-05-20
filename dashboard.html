@@ -356,16 +356,17 @@
     font-size:9.5px;color:var(--text-3);margin-top:3px;
   }
 
-  /* ─────────── SHAP ─────────── */
+  /* ─────────── RISK FACTORS ─────────── */
   .shap-row{margin-bottom:15px;}
   .shap-row:last-of-type{margin-bottom:0;}
-  .shap-top{display:flex;align-items:baseline;margin-bottom:6px;}
-  .shap-feat{font-size:12.5px;font-weight:700;font-family:ui-monospace,Menlo,monospace;}
+  .shap-top{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+  .shap-feat{font-size:13px;font-weight:700;letter-spacing:-.1px;}
   .shap-val{
-    margin-left:auto;font-size:12px;font-weight:700;color:var(--red);
-    font-family:ui-monospace,Menlo,monospace;
+    margin-left:auto;flex-shrink:0;font-size:11.5px;font-weight:700;
+    color:var(--red);background:var(--red-dim);
+    padding:2px 8px;border-radius:6px;
   }
-  .shap-desc{font-size:11px;color:var(--text-3);margin-bottom:6px;}
+  .shap-desc{font-size:11.5px;color:var(--text-2);margin-bottom:7px;line-height:1.45;}
   .shap-bar{
     height:8px;background:var(--inner);border-radius:5px;overflow:hidden;
   }
@@ -544,7 +545,7 @@
           <div class="card-head">
             <div>
               <h2>Patient Risk Overview</h2>
-              <div class="ch-sub">XGBoost + 1D-CNN ensemble · model AUROC 0.86</div>
+              <div class="ch-sub">AI-assisted in-hospital mortality risk · continuously updated</div>
             </div>
             <div class="ch-right">
               <div class="live"><span class="pulse"></span> LIVE</div>
@@ -689,18 +690,18 @@
       <!-- ───── RIGHT COLUMN ───── -->
       <div class="col">
 
-        <!-- SHAP -->
+        <!-- Why this alert -->
         <div class="card">
           <div class="card-head">
             <div>
-              <h2>Alert Drivers</h2>
-              <div class="ch-sub">Why the model raised this alert · SHAP</div>
+              <h2>Why This Alert</h2>
+              <div class="ch-sub">Main clinical findings behind the risk score</div>
             </div>
           </div>
           <div id="shapList"></div>
           <div class="shap-foot">
             <span class="mdot"></span>
-            All 5 features push risk <b style="color:var(--red);font-weight:700">&nbsp;upward</b>. Bar length = SHAP contribution.
+            Each bar shows how strongly that finding pushes the risk up — together they explain most of the score.
           </div>
         </div>
 
@@ -715,7 +716,7 @@
 
           <div class="thr-display">
             <div class="thr-big" id="thrBig">0.41</div>
-            <div class="thr-cap">decision cutoff<br>cost-optimised <b>FN:FP ≈ 5:1</b></div>
+            <div class="thr-cap">patients scoring above<br>this value <b>trigger an alert</b></div>
           </div>
 
           <div class="slider-wrap">
@@ -769,12 +770,17 @@
 /* ════════════ DATA ════════════ */
 const PATIENT_RISK = 0.78;
 
-const SHAP = [
-  {f:'rr_delta',     v:0.82, d:'Respiratory rate climbing fast'},
-  {f:'spo2_last',    v:0.63, d:'Latest SpO₂ critically low (87%)'},
-  {f:'lactate_delta',v:0.50, d:'Lactate rising — tissue hypoxia'},
-  {f:'spo2_min',     v:0.31, d:'Minimum SpO₂ in danger zone'},
-  {f:'age',          v:0.26, d:'Age 71 — baseline risk factor'}
+const DRIVERS = [
+  {name:'Respiratory rate rising fast',     w:0.82,
+   detail:'Up from 19 to 32 breaths/min over 8 h — a clear sign of respiratory distress.'},
+  {name:'Oxygen saturation critically low', w:0.63,
+   detail:'Current SpO₂ is 87% — well below the safe level of 92%.'},
+  {name:'Lactate climbing',                 w:0.50,
+   detail:'Risen from 1.6 to 5.1 mmol/L — points to oxygen starvation in the tissues.'},
+  {name:'Oxygen dipped into danger zone',   w:0.31,
+   detail:'Lowest SpO₂ recorded in the last 8 h fell to 86%.'},
+  {name:'Advanced age',                     w:0.26,
+   detail:'Patient is 71 years old — raises the baseline mortality risk.'}
 ];
 
 const HR   = [84,88,91,95,99,106,112,118];
@@ -849,18 +855,21 @@ function spark(id,data,color){
   `;
 }
 
-/* ════════════ SHAP ════════════ */
-function renderShap(){
-  const max=Math.max(...SHAP.map(s=>s.v));
-  document.getElementById('shapList').innerHTML=SHAP.map(s=>`
-    <div class="shap-row">
+/* ════════════ RISK FACTORS ════════════ */
+function renderDrivers(){
+  const total=DRIVERS.reduce((s,d)=>s+d.w,0);
+  const max=Math.max(...DRIVERS.map(d=>d.w));
+  document.getElementById('shapList').innerHTML=DRIVERS.map(d=>{
+    const pct=Math.round(d.w/total*100);
+    return `<div class="shap-row">
       <div class="shap-top">
-        <span class="shap-feat">${s.f}</span>
-        <span class="shap-val">+${s.v.toFixed(2)}</span>
+        <span class="shap-feat">${d.name}</span>
+        <span class="shap-val">${pct}%</span>
       </div>
-      <div class="shap-desc">${s.d}</div>
-      <div class="shap-bar"><div class="shap-fill" style="width:${(s.v/max*100).toFixed(0)}%"></div></div>
-    </div>`).join('');
+      <div class="shap-desc">${d.detail}</div>
+      <div class="shap-bar"><div class="shap-fill" style="width:${(d.w/max*100).toFixed(0)}%"></div></div>
+    </div>`;
+  }).join('');
 }
 
 /* ════════════ THRESHOLD ════════════ */
@@ -916,7 +925,7 @@ renderGauge(PATIENT_RISK,0.41);
 spark('chHr',HR,'#FF5A5A');
 spark('chSpo2',SPO2,'#38BDF8');
 spark('chLac',LAC,'#F5A623');
-renderShap();
+renderDrivers();
 updateThreshold(0.41);
 document.getElementById('thrSlider').addEventListener('input',e=>updateThreshold(parseFloat(e.target.value)));
 </script>
