@@ -205,12 +205,77 @@
   .seg button.on{background:var(--blue-dim);color:var(--blue-bright);}
 
   /* ─────────── PATIENT OVERVIEW ─────────── */
-  .overview{display:grid;grid-template-columns:330px minmax(0,1fr);gap:24px;}
+  .overview{display:flex;gap:18px;margin-bottom:18px;}
   .gauge-wrap{
+    width:316px;flex-shrink:0;
     background:var(--inner);border:1px solid var(--border-soft);
     border-radius:14px;padding:14px 10px 16px;
-    display:flex;flex-direction:column;align-items:center;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
   }
+
+  /* beating heart hero */
+  .heart-hero{
+    flex:1;min-width:0;
+    background:var(--inner);border:1px solid var(--border-soft);
+    border-radius:14px;overflow:hidden;
+    display:flex;flex-direction:column;
+  }
+  .hh-body{display:flex;align-items:center;gap:10px;padding:20px 26px 16px;flex:1;}
+  .heart-stage{
+    position:relative;width:152px;height:140px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .heart-glow{
+    position:absolute;width:124px;height:124px;border-radius:50%;
+    background:radial-gradient(circle,rgba(255,90,90,.55),transparent 70%);
+    animation:glowpulse .52s ease-in-out infinite;
+  }
+  .heart-svg{
+    width:106px;height:106px;position:relative;
+    animation:heartbeat .52s ease-in-out infinite;
+    filter:drop-shadow(0 6px 16px rgba(255,90,90,.55));
+  }
+  @keyframes heartbeat{
+    0%{transform:scale(.93);}
+    13%{transform:scale(1.14);}
+    26%{transform:scale(.99);}
+    38%{transform:scale(1.07);}
+    52%,100%{transform:scale(.93);}
+  }
+  @keyframes glowpulse{
+    0%,52%,100%{opacity:.28;transform:scale(.85);}
+    13%{opacity:.85;transform:scale(1.22);}
+    38%{opacity:.5;transform:scale(1);}
+  }
+  .hh-info{flex:1;min-width:0;}
+  .hh-label{
+    font-size:10.5px;font-weight:700;letter-spacing:.7px;color:var(--text-3);
+    display:flex;align-items:center;gap:6px;
+  }
+  .hh-label::before{
+    content:"";width:6px;height:6px;border-radius:50%;background:var(--red);
+    animation:blink 1.6s infinite;
+  }
+  .hh-num{
+    font-size:52px;font-weight:800;letter-spacing:-2.5px;line-height:1.05;
+    margin-top:5px;
+  }
+  .hh-num u{font-size:16px;font-weight:600;color:var(--text-3);text-decoration:none;}
+  .hh-status{font-size:12px;font-weight:600;color:var(--red);margin-top:3px;}
+  .ecg-strip{
+    height:66px;background:#0A0D14;
+    border-top:1px solid var(--border-soft);
+    overflow:hidden;position:relative;
+  }
+  .ecg-strip::after{
+    content:"";position:absolute;top:0;right:0;width:64px;height:100%;
+    background:linear-gradient(90deg,transparent,#0A0D14);
+  }
+  .ecg-strip svg{
+    height:66px;width:2400px;display:block;
+    animation:ecgscroll 3.05s linear infinite;
+  }
+  @keyframes ecgscroll{from{transform:translateX(0);}to{transform:translateX(-1200px);}}
   .gauge-foot{display:flex;gap:8px;margin-top:6px;}
   .risk-pill{
     font-size:12px;font-weight:700;letter-spacing:.4px;
@@ -501,8 +566,33 @@
               </div>
             </div>
 
-            <!-- patient details -->
-            <div class="pdetails">
+            <!-- beating heart -->
+            <div class="heart-hero">
+              <div class="hh-body">
+                <div class="heart-stage">
+                  <div class="heart-glow"></div>
+                  <svg class="heart-svg" viewBox="0 0 24 24">
+                    <defs><linearGradient id="hg" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0" stop-color="#FF8C8C"/>
+                      <stop offset="1" stop-color="#CC2626"/>
+                    </linearGradient></defs>
+                    <path d="M12 21.6 C12 21.6 3 14.6 3 8.7 C3 5.4 5.5 3 8.6 3 C10.5 3 12 4.6 12 4.6 C12 4.6 13.5 3 15.4 3 C18.5 3 21 5.4 21 8.7 C21 14.6 12 21.6 12 21.6 Z" fill="url(#hg)"/>
+                  </svg>
+                </div>
+                <div class="hh-info">
+                  <div class="hh-label">CARDIAC ACTIVITY · live monitor</div>
+                  <div class="hh-num">118 <u>BPM</u></div>
+                  <div class="hh-status">▲ Tachycardia · +34 bpm over 8 h</div>
+                </div>
+              </div>
+              <div class="ecg-strip">
+                <svg id="ecg" viewBox="0 0 2400 66" preserveAspectRatio="none"></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- patient details -->
+          <div class="pdetails">
               <div class="pid-row">
                 <div class="pid-block">
                   <b>Bed 12 · ID 0312</b>
@@ -526,9 +616,9 @@
 
               <div class="vitals-row">
                 <div class="vital">
-                  <div class="vt">HEART RATE</div>
-                  <div class="vv">118 <u>bpm</u></div>
-                  <div class="vd up">▲ +34 / 8h</div>
+                  <div class="vt">RESP. RATE</div>
+                  <div class="vv">32 <u>/min</u></div>
+                  <div class="vd up">▲ +13 / 8h</div>
                 </div>
                 <div class="vital">
                   <div class="vt">SpO₂</div>
@@ -542,7 +632,6 @@
                 </div>
               </div>
             </div>
-          </div>
         </div>
 
         <!-- Vital Sign Trends -->
@@ -807,7 +896,22 @@ function updateThreshold(t){
   }
 }
 
+/* ════════════ ECG TRACE ════════════ */
+function buildEcg(){
+  const beat=[[0,40],[46,40],[52,35],[58,33],[64,35],[70,40],[82,40],
+    [86,45],[92,7],[98,54],[103,40],[122,40],
+    [132,33],[143,28],[154,28],[164,33],[174,40],[200,40]];
+  let pts=[];
+  for(let i=0;i<12;i++) beat.forEach(p=>pts.push([p[0]+i*200,p[1]]));
+  const d='M '+pts.map(p=>p[0]+' '+p[1]).join(' L ');
+  document.getElementById('ecg').innerHTML=
+    '<path d="'+d+'" fill="none" stroke="#FF5A5A" stroke-width="2.6" '+
+    'stroke-linejoin="round" stroke-linecap="round" '+
+    'style="filter:drop-shadow(0 0 5px rgba(255,90,90,.65))"/>';
+}
+
 /* ════════════ INIT ════════════ */
+buildEcg();
 renderGauge(PATIENT_RISK,0.41);
 spark('chHr',HR,'#FF5A5A');
 spark('chSpo2',SPO2,'#38BDF8');
